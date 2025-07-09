@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Unbeatable Tic Tac Toe</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f4f4f4;
+    }
+    h1 {
+      margin-top: 30px;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-gap: 5px;
+      margin: 20px auto;
+      width: max-content;
+    }
+    .cell {
+      width: 100px;
+      height: 100px;
+      font-size: 48px;
+      border: 2px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      cursor: pointer;
+    }
+    .cell:hover {
+      background-color: #eee;
+    }
+    #message {
+      font-size: 24px;
+      margin-top: 20px;
+    }
+    #resetBtn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Unbeatable Tic Tac Toe - You vs AI</h1>
+  <div id="board"></div>
+  <div id="message"></div>
+  <button id="resetBtn">Restart Game</button>
+
+  <script>
+    const board = document.getElementById("board");
+    const message = document.getElementById("message");
+    const resetBtn = document.getElementById("resetBtn");
+
+    let cells = Array(9).fill(null);
+    let gameActive = true;
+    const player = "X";
+    const ai = "O";
+
+    function checkWinner(boardState) {
+      const wins = [
+        [0,1,2], [3,4,5], [6,7,8],
+        [0,3,6], [1,4,7], [2,5,8],
+        [0,4,8], [2,4,6]
+      ];
+      for (let [a,b,c] of wins) {
+        if (boardState[a] && boardState[a] === boardState[b] && boardState[b] === boardState[c]) {
+          return boardState[a];
+        }
+      }
+      return boardState.includes(null) ? null : "Tie";
+    }
+
+    function minimax(boardState, isMaximizing) {
+      const winner = checkWinner(boardState);
+      if (winner === ai) return { score: 1 };
+      if (winner === player) return { score: -1 };
+      if (winner === "Tie") return { score: 0 };
+
+      let bestMove;
+      if (isMaximizing) {
+        let bestScore = -Infinity;
+        boardState.forEach((val, i) => {
+          if (val === null) {
+            boardState[i] = ai;
+            let score = minimax(boardState, false).score;
+            boardState[i] = null;
+            if (score > bestScore) {
+              bestScore = score;
+              bestMove = i;
+            }
+          }
+        });
+        return { score: bestScore, move: bestMove };
+      } else {
+        let bestScore = Infinity;
+        boardState.forEach((val, i) => {
+          if (val === null) {
+            boardState[i] = player;
+            let score = minimax(boardState, true).score;
+            boardState[i] = null;
+            if (score < bestScore) {
+              bestScore = score;
+              bestMove = i;
+            }
+          }
+        });
+        return { score: bestScore, move: bestMove };
+      }
+    }
+
+    function aiMove() {
+      if (!gameActive) return;
+      let best = minimax([...cells], true);
+      if (best.move !== undefined) {
+        makeMove(best.move, ai);
+        let result = checkWinner(cells);
+        if (result) endGame(result);
+      }
+    }
+
+    function makeMove(index, mark) {
+      cells[index] = mark;
+      document.getElementById(`cell-${index}`).textContent = mark;
+    }
+
+    function handleClick(i) {
+      if (!gameActive || cells[i]) return;
+      makeMove(i, player);
+      let result = checkWinner(cells);
+      if (result) {
+        endGame(result);
+      } else {
+        setTimeout(aiMove, 200); // short delay
+      }
+    }
+
+    function endGame(winner) {
+      gameActive = false;
+      if (winner === "Tie") {
+        message.textContent = "It's a tie!";
+      } else {
+        message.textContent = `${winner} wins!`;
+      }
+    }
+
+    function createBoard() {
+      board.innerHTML = "";
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.id = `cell-${i}`;
+        cell.addEventListener("click", () => handleClick(i));
+        board.appendChild(cell);
+      }
+    }
+
+    function resetGame() {
+      cells = Array(9).fill(null);
+      gameActive = true;
+      message.textContent = "";
+      createBoard();
+    }
+
+    resetBtn.addEventListener("click", resetGame);
+
+    createBoard();
+  </script>
+</body>
+</html>
